@@ -1,6 +1,6 @@
 {
     // 设置工作台的主题和图标主题
-    "workbench.colorTheme": "One Dark Pro",
+    "workbench.colorTheme": "GitHub Dark",
     "workbench.iconTheme": "material-icon-theme",
     // 解决github-copilot默认会显示出来的问题
     "workbench.secondarySideBar.defaultVisibility": "hidden",
@@ -10,5 +10,7 @@
     "terminal.integrated.shellIntegration.environmentReporting": true,
     
     // 禁用侧边栏内部的 copilot 对话框功能
-    "chat.disableAIFeatures": true
+    "chat.disableAIFeatures": true,
+
+    "terminal.integrated.defaultProfile.linux": "zsh"
 }
