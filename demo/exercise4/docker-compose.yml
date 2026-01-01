@@ -1,0 +1,46 @@
+# 作业要求：
+# 1. 使用 Docker Volume 持久化 MySQL 数据，保障数据不会因容器重启而丢失。
+# 2. 通过 init.sql 初始化数据库，创建 testdb。
+# 3. 通过环境变量设置 MySQL root 密码。
+# 4. 提供测试脚本验证数据持久化。
+# 5. 使用 docker compose 部署。
+#
+# 说明：
+# - mysql-data 是 named volume，用于持久化 /var/lib/mysql 目录。
+# - ./init.sql 会在容器首次启动时自动执行，初始化数据库。
+# - 设置 root 用户密码为 123456 。
+# - 3306:3306 将 MySQL 服务暴露到主机。
+
+# version: '3.8' # 指定 Docker Compose 版本，但是在compose 2.0 中，可以不指定
+
+# 在这里编写你的 docker-compose.yml 文件
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-server
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    ports:
+      - "3306:3306"
+    volumes:
+      # 挂载命名卷 mysql-data 到容器内的 /var/lib/mysql 目录，持久化数据，即使容器删除或重启，数据也不会丢失
+      # /var/lib/mysql 是 MySQL 存储所有数据库文件（数据表、索引等）的默认路径
+      - mysql-data:/var/lib/mysql
+      # 将主机当前目录下的 init.sql 文件映射到容器的初始化脚本目录
+      # /docker-entrypoint-initdb.d/ 目录下的 .sql 文件会在 MySQL 容器首次启动时自动执行
+      # 用于初始化数据库、创建表结构、插入初始数据等操作
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mysql-network
+      
+volumes:
+  mysql-data:
+
+networks:
+  mysql-network:
+    driver: bridge
+
+# 测试:
+# docker compose up -d 启动服务
+# 服务启动后登录 mysql 终端查看 testdb 数据库是否存在
+# 重启服务后查看 testdb 数据库是否依然存在
