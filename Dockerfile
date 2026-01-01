@@ -9,7 +9,8 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
     code-server --install-extension cloudstudio.live-server &&\
     code-server --install-extension tencent-cloud.coding-copilot &&\
     code-server --install-extension PKief.material-icon-theme &&\
-    code-server --install-extension github.github-vscode-theme
+    code-server --install-extension github.github-vscode-theme &&\
+    code-server --install-extension EditorConfig.EditorConfig
 
 # 安装 ssh 服务，用于支持 VSCode 客户端通过 Remote-SSH 访问开发环境，开发环境需保留 apt-get 缓存
 RUN apt-get update && apt-get install -y wget unzip lsof nload htop net-tools dnsutils openssh-server zsh
