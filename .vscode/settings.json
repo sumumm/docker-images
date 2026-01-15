@@ -1,7 +1,23 @@
 {
-    "workbench.activityBar.location": "top",
-    
-    "editor.detectIndentation": false,
-    "editor.insertSpaces": true,
-    "editor.tabSize": 4
+  "workbench.activityBar.location": "top",
+  
+  "editor.detectIndentation": false,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 4,
+
+  // Ctrl + 鼠标滚轮缩放编辑器文字大小
+  "editor.mouseWheelZoom": true,
+  // 丝滑打字配置
+  "editor.smoothScrolling": true,
+  // "editor.cursorBlinking": "expand",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "workbench.list.smoothScrolling": true,
+  // 自动补全括号、引号等
+  "editor.autoClosingBrackets": "beforeWhitespace",
+  "editor.autoClosingDelete": "always",
+  "editor.autoClosingOvertype": "always",
+  // 搜索吸附目录
+  "search.searchEditor.singleClickBehaviour": "peekDefinition",
+  // 编辑器中父级自动吸附置顶（例如函数体很长时可以在最上面固定函数名，默认是开的）
+  "editor.stickyScroll.enabled": true,
 }

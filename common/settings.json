@@ -1,16 +1,34 @@
 {
-    // 设置工作台的主题和图标主题
-    "workbench.colorTheme": "GitHub Dark",
-    "workbench.iconTheme": "material-icon-theme",
-    // 解决github-copilot默认会显示出来的问题
-    "workbench.secondarySideBar.defaultVisibility": "hidden",
+  // 设置工作台的主题和图标主题
+  "workbench.colorTheme": "GitHub Dark",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.activityBar.location": "top",
+  // 解决github-copilot默认会显示出来的问题
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
 
-    "terminal.integrated.suggest.enabled": true,
-    // 开启后终端敲命令也会出现命令补全提示
-    "terminal.integrated.shellIntegration.environmentReporting": true,
-    
-    // 禁用侧边栏内部的 copilot 对话框功能
-    "chat.disableAIFeatures": true,
+  // 开启后终端敲命令也会出现命令补全提示
+  "terminal.integrated.suggest.enabled": false,
+  "terminal.integrated.shellIntegration.environmentReporting": true,
 
-    "terminal.integrated.defaultProfile.linux": "zsh"
+  // 禁用侧边栏内部的 copilot 对话框功能
+  "chat.disableAIFeatures": true,
+  // 设置默认终端
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  // Ctrl + 鼠标滚轮缩放编辑器文字大小
+  "editor.mouseWheelZoom": true,
+  // 丝滑打字配置
+  "editor.smoothScrolling": true,
+  // "editor.cursorBlinking": "expand",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "workbench.list.smoothScrolling": true,
+  // 自动补全括号、引号等（其实默认都是打开的）
+  "editor.autoClosingBrackets": "beforeWhitespace",
+  "editor.autoClosingDelete": "always",
+  "editor.autoClosingOvertype": "always",
+  "editor.autoClosingQuotes": "beforeWhitespace",
+  "window.density.editorTabHeight": "compact",
+  // 搜索吸附目录
+  "search.searchEditor.singleClickBehaviour": "peekDefinition",
+  // 编辑器中父级自动吸附置顶（例如函数体很长时可以在最上面固定函数名，默认是开的）
+  "editor.stickyScroll.enabled": true
 }
