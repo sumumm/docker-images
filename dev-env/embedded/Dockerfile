@@ -3,7 +3,13 @@ FROM ubuntu:22.04
 # 更新软件包
 RUN apt-get update && \
     apt-get install -y curl wget unzip xz-utils git openssh-server vim zsh tree clangd && \
-    apt-get install -y gcc-9 make cmake bison flex libncurses-dev bc libssl-dev lzop bear file
+    apt-get install -y gcc-9 make cmake bison flex libncurses-dev bc libssl-dev lzop bear file &&\
+    apt-get install -y python3
+
+# 安装repo
+RUN curl -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo && \
+    chmod a+x /usr/local/bin/repo &&\
+    ln -s /usr/bin/python3 /usr/bin/python
 
 # install vscode and extension
 RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
