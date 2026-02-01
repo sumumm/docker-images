@@ -1,0 +1,53 @@
+# 作业要求：
+# 1. 使用自定义 bridge 网络，实现 Web 应用与 Redis 的容器间通信。
+# 2. Web 应用需通过 /ping 路径访问，并使用 Redis 进行计数。
+# 3. 通过 docker-compose 管理多容器服务。
+# 4. 提供测试脚本验证 /ping 计数功能。
+#
+# 说明：
+# - mynet 是自定义 bridge 网络，保障容器间隔离与通信。
+# - web 服务依赖 redis 服务，需通过网络名访问 redis。
+# - 5000:5000 将 Web 服务暴露到主机。
+# - 可通过 Dockerfile 构建 web 服务镜像。
+#
+
+version: '3.8'
+
+# 在这里编写你的 docker-compose.yml 文件
+services:
+  web:
+    build: .
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379  # 自定义网络中服务名可直接作为主机名访问
+    container_name: web-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    networks:
+      - mynet
+    depends_on:
+      redis:
+        condition: service_healthy  # 等待Redis健康检查通过后再启动
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://redis:6379"] # 检查Redis是否可连接
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  redis:
+    image: redis:7-alpine
+    container_name: redis-server
+    restart: unless-stopped
+    networks:
+      - mynet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]  # 检查Redis是否正常运行
+      interval: 5s
+      timeout: 3s
+      retries: 3
+networks:
+  mynet:
+    driver: bridge
+# 测试:
+# docker compose up -d --build 启动服务
+# curl http://localhost:5000/ping 验证计数功能

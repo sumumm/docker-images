@@ -1,0 +1,78 @@
+# 作业要求：
+# 1. 使用 Docker Compose 编排 Golang Web 服务、MySQL 和 Nginx 三个服务。
+# 2. Golang Web 服务需实现 /count 路径，计数存储在 MySQL。
+# 3. Nginx 反向代理 8080 端口到 Web 服务。
+# 4. 所有服务通过自定义网络通信，Web 仅对 Nginx 暴露。
+# 5. 提供测试脚本验证计数功能。
+#
+# 说明：
+# - app 服务通过 Dockerfile 构建，依赖 MySQL。
+# - nginx 服务挂载自定义配置文件。
+# - 统一使用 app-network 网络。
+# - MYSQL_DSN 环境变量用于配置数据库连接。
+# - mysql-data 是 named volume，用于持久化 MySQL 数据。
+
+version: '3.8'
+
+# 在这里编写你的 docker-compose.yml 文件
+
+services:
+  app:
+    build: ./app
+    container_name: go-web-app
+    restart: unless-stopped
+    environment:
+      - MYSQL_DSN=root:123456@tcp(mysql:3306)/counter-db
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    expose:
+      - "3000"
+    healthcheck:  # 应用健康检查（需配合Dockerfile中的健康检查命令）
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=counter-db
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -P 3306 -u root -p$$MYSQL_ROOT_PASSWORD"] # 明确指定本地端口和root密码
+      interval: 10s
+      timeout: 5s
+      start_period: 60s  # 增加启动延迟，确保MySQL完全初始化
+      retries: 5
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy-server
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app-network
+    depends_on:
+      app:
+        condition: service_started  # 等待app健康后再启动
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+
+# 测试:
+# docker compose up -d --build 启动服务
+# curl http://localhost:8080/count 验证计数功能
