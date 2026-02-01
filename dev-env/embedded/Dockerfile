@@ -20,6 +20,7 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
     code-server --install-extension PKief.material-icon-theme &&\
     code-server --install-extension github.github-vscode-theme &&\
     code-server --install-extension EditorConfig.EditorConfig &&\
+    code-server --install-extension mads-hartmann.bash-ide-vscode &&\
     code-server --install-extension llvm-vs-code-extensions.vscode-clangd &&\
     code-server --install-extension ms-vscode.hexeditor
 
