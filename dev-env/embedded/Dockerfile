@@ -48,7 +48,7 @@ COPY common/settings.json /root/.vscode-server/data/Machine/settings.json
 COPY common/settings.json /root/.local/share/code-server/Machine/settings.json
 COPY common/gitconfig /root/.gitconfig
 
-WORKDIR ~/smTemp
+WORKDIR ./scripts
 COPY dev-env/embedded/script/arm-gcc.sh .
 RUN chmod +x arm-gcc.sh && \
     bash ./arm-gcc.sh
