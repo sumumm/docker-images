@@ -2,16 +2,16 @@
 
 ## 一、核心构建指令
 
-|    指令    |                说明                 |            示例             |
-| :--------: | :---------------------------------: | :-------------------------: |
-|    FROM    |   指定基础镜像，必须是第一条指令    |     `FROM ubuntu:20.04`     |
-|  WORKDIR   | 设置工作目录，后续指令在此目录执行  |       `WORKDIR /app`        |
-|    COPY    |        复制文件/目录到镜像中        |        `COPY . /app`        |
+|    指令    |                 说明                  |            示例             |
+| :--------: | :-----------------------------------: | :-------------------------: |
+|    FROM    |    指定基础镜像，必须是第一条指令     |     `FROM ubuntu:20.04`     |
+|  WORKDIR   |  设置工作目录，后续指令在此目录执行   |       `WORKDIR /app`        |
+|    COPY    |         复制文件/目录到镜像中         |        `COPY . /app`        |
 |    ADD     | 复制文件到镜像中，支持 URL 和自动解压 |    `ADD app.tar.gz /app`    |
-|    RUN     |          在构建时执行命令           |    `RUN apt-get update`     |
-|    CMD     |        容器启动时的默认命令         | `CMD ["python", "app.py"]`  |
-| ENTRYPOINT |   容器启动时的入口点，不会被覆盖    | `ENTRYPOINT ["./start.sh"]` |
-| USER | 指定执行后续命令的用户和用户组 | `USER root` |
+|    RUN     |           在构建时执行命令            |    `RUN apt-get update`     |
+|    CMD     |         容器启动时的默认命令          | `CMD ["python", "app.py"]`  |
+| ENTRYPOINT |    容器启动时的入口点，不会被覆盖     | `ENTRYPOINT ["./start.sh"]` |
+|    USER    |    指定执行后续命令的用户和用户组     |         `USER root`         |
 
 Docker 按顺序执行 Dockerfile 中的指令。Dockerfile **必须以 `FROM` 指令开头**。这可能位于 [解析器指令](https://docs.docker.com/reference/dockerfile/#parser-directives)、[注释](https://docs.docker.com/reference/dockerfile/#format) 和全局作用域的 [ARG](https://docs.docker.com/reference/dockerfile/#arg) 之后。`FROM` 指令指定了我们正在构建所基于的 [基础镜像](https://docs.docker.com/glossary/#base-image)。`FROM` 之前只能有一个或多个 `ARG` 指令，这些指令声明了在 Dockerfile 的 FROM 行中使用的参数。
 
@@ -29,6 +29,8 @@ FROM <image>:<tag>
 FROM <image>@<digest>
 ```
 
+#### 1.2 多个FROM
+
 一个 Dockerfile 中可以有多个 `FROM` 指令，这是完全合法的。这种用法叫做 **多阶段构建（Multi-stage Build）**，多阶段构建搭配 `AS` 使用，`AS` 后为此阶段的名称，方便后面引用。当有多个 FROM 的时候，最终的镜像只包含 **最后一个 FROM 阶段** 的内容。
 
 ```dockerfile
@@ -45,7 +47,7 @@ COPY --from=builder /app/hello.txt .
 
 这里可以准备一个 hello.txt 文档，里面随便写点东西即可。
 
-#### 1.2 使用示例
+#### 1.3 使用示例
 
 对应示例为: [Dockerfile](../samples/05-Dockerfile/multi-stage/Dockerfile)，使用如下命令打包和运行：
 
@@ -88,7 +90,69 @@ COPY hom?.txt /mydir/
 
 - **`<dest>`**：容器内的指定路径，该路径不用事先建好，路径不存在的话，会自动创建。
 
-#### 3.2 使用示例
+#### 3.2 源文件路径怎么定？
+
+COPY 指令的路径规则：
+
+- **第一个参数（源路径）**：相对于 **构建上下文（Build Context）** 的路径。构建上下文是执行 `docker build` 命令时指定的路径（通常是 `.` 即当前目录）。源路径不能跳出构建上下文的范围，例如 `COPY ../file.txt /app` 是不允许的。
+
+例如，假设在 `/project` 目录下执行 `docker build -t myapp .`，构建上下文就是 `/project`。Dockerfile 中的 `COPY src/file.txt /app/` 会将 `/project/src/file.txt` 复制到容器的 `/app/` 目录。
+
+- **第二个参数（目标路径）**：如果目标是绝对路径（以 `/` 开头），则直接使用该路径；如果是相对路径，则相对于 `WORKDIR` 指定的工作目录。
+
+在复制目录的时候，若目标路径是`.`，那么不会复制目录，会把目录内的所有文件复制到目标路径，若是制定了目标目录名，则会创建将源目录整个目录复制到为目标路径，路径不存在时会自动创建
+
+#### 3.3 使用示例
+
+##### 3.3.1 基础示例
+
+- [Dockerfile](../samples/05-Dockerfile/copy-demo/Dockerfile)
+
+我们进入对应的目录执行下面的命令构建镜像然后启动容器：
+
+```shell
+docker build -t copy-demo .
+docker run -it copy-demo sh
+```
+
+进入容器后应该直接位于 WORKDIR 设置的目录：
+
+```md
+➜  copy-demo git:(main) ✗ docker run -it copy-demo sh  
+/sumu_temp # ls
+test.txt
+/sumu_temp # cat test.txt 
+这是一个测试文件
+```
+
+##### 3.3.2 路径示例
+
+- [Dockerfile.path](../samples/05-Dockerfile/copy-demo/Dockerfile.path)
+
+我们进入到这个dockerfile所在目录，执行以下命令：
+
+```shell
+cd ../../
+docker build -f 05-Dockerfile/copy-demo/Dockerfile.path -t copy-demo .
+docker run -it copy-demo sh  
+```
+
+然后执行tree命令，可以得到以下输出信息：
+
+```shell
+➜  samples git:(main) ✗ docker run -it copy-demo sh                                           
+/sumu_temp # tree
+.
+├── README.md
+├── common-dst
+│   └── README.md
+└── test.txt
+
+2 directories, 3 files
+```
+
+
+
 
 ### 4. ADD
 
@@ -146,7 +210,40 @@ CMD ["<param1>","<param2>",...]
 
 #### 6.2 使用示例
 
-暂无。
+- [Dockerfile](../samples/05-Dockerfile/cmd-demo/Dockerfile)
+
+我们执行以下命令：
+
+```shell
+# 进入 cmd-demo 目录
+cd /workspace/tutorial/samples/05-Dockerfile/cmd-demo
+
+# 构建镜像
+docker build -t cmd-demo .
+
+# 运行容器（使用默认 CMD 参数）
+docker run --rm cmd-demo
+# 输出:
+# === CMD 参数演示 ===
+# 参数个数: 3
+# 参数列表:
+#   - hello
+#   - world
+#   - docker
+
+# 覆盖 CMD 参数
+docker run --rm cmd-demo /app.sh foo bar baz
+# 输出:
+# === CMD 参数演示 ===
+# 参数个数: 3
+# 参数列表:
+#   - foo
+#   - bar
+#   - baz
+
+```
+
+
 
 ### 7. ENTRYPOINT
 
@@ -169,6 +266,8 @@ ENTRYPOINT command param1 param2
 可以搭配 CMD 命令使用：一般是变参才会使用 CMD ，这里的 CMD 等于是在给 ENTRYPOINT 传参，以下示例会提到。
 
 #### 7.2 使用示例
+
+##### 7.2.1 示例1
 
 假设已通过 Dockerfile 构建了 nginx: test 镜像：
 
@@ -204,6 +303,47 @@ docker run  nginx:test -c /etc/nginx/new.conf
 ```shell
 nginx -c /etc/nginx/new.conf
 ```
+
+##### 7.2.2 示例2
+
+- [Dockerfile](../samples/05-Dockerfile/entrypoint-demo/Dockerfile)
+
+使用以下命令测试：
+
+```shell
+# 进入目录
+cd /workspace/tutorial/samples/05-Dockerfile/entrypoint-demo
+
+# 构建镜像
+docker build -t entrypoint-demo .
+
+# 使用默认 CMD 参数运行
+docker run --rm entrypoint-demo
+# 输出:
+# === ENTRYPOINT 参数演示 ===
+# 脚本名: /entry.sh
+# 参数个数: 2
+# 参数列表:
+#   - default
+#   - args
+
+# 覆盖 CMD 参数（自动传给 ENTRYPOINT）
+docker run --rm entrypoint-demo foo bar
+# 输出:
+# === ENTRYPOINT 参数演示 ===
+# 脚本名: /entry.sh
+# 参数个数: 2
+# 参数列表:
+#   - foo
+#   - bar
+
+# 覆盖 ENTRYPOINT（需要 --entrypoint）
+docker run --rm --entrypoint /bin/sh entrypoint-demo -c "echo hello"
+# 输出: hello
+
+```
+
+
 
 ### 8. USER
 
@@ -279,7 +419,18 @@ ENV <key> <value>
 ENV <key1>=<value1> <key2>=<value2>...
 ```
 
-#### 1.2 使用示例
+#### 1.2 查看环境变量
+
+```shell
+# 查看镜像中定义的环境变量
+docker inspect <images_name> --format '{{range .Config.Env}}{{println .}}{{end}}'
+```
+
+
+
+#### 1.3 使用示例
+
+##### 1.3.1 示例1
 
 以下示例设置 NODE_VERSION = 7.2.0 ， 在后续的指令中可以通过 `$NODE_VERSION` 引用：
 
@@ -289,6 +440,45 @@ ENV NODE_VERSION 7.2.0
 RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" \
   && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc"
 ```
+
+##### 1.3.2 示例2
+
+- [Dockerfile](../samples/05-Dockerfile/env-demo/Dockerfile)
+
+使用以下命令测试：
+
+```shell
+# 进入目录
+cd /workspace/tutorial/samples/05-Dockerfile/env-demo
+
+# 构建镜像
+docker build -t env-demo .
+
+# 使用默认环境变量运行
+docker run --rm env-demo
+# 输出:
+# === ENV 环境变量演示 ===
+# APP_NAME: myapp
+# APP_VERSION: 1.0.0
+# APP_DIR: /opt/app
+# DB_HOST: localhost
+# DB_PORT: 5432
+# DB_USER: admin
+
+# 覆盖环境变量
+docker run --rm -e DB_HOST=192.168.1.100 -e DB_PORT=3306 env-demo
+# 输出:
+# === ENV 环境变量演示 ===
+# APP_NAME: myapp
+# APP_VERSION: 1.0.0
+# APP_DIR: /opt/app
+# DB_HOST: 192.168.1.100
+# DB_PORT: 3306
+# DB_USER: admin
+
+```
+
+
 
 ### 2. ARG
 
@@ -304,7 +494,40 @@ ARG <参数名>[=<默认值>]
 
 #### 2.2 使用示例
 
-暂无。
+使用以下命令测试：
+
+```shell
+# 进入目录
+cd /workspace/tutorial/samples/05-Dockerfile/arg-demo
+
+# 使用默认 ARG 值构建
+docker build -t arg-demo .
+docker run --rm arg-demo
+# 输出:
+# === ARG 构建参数演示 ===
+# APP_VERSION: 1.0.0
+# BUILD_BY: developer
+# BUILD_DATE:
+
+# 使用 --build-arg 覆盖 ARG 值
+docker build --build-arg APP_VERSION=2.0.0 \
+             --build-arg BUILD_BY=docker-user \
+             --build-arg BUILD_DATE=2026-02-21 \
+             -t arg-demo:v2 .
+
+docker run --rm arg-demo:v2
+# 输出:
+# === ARG 构建参数演示 ===
+# APP_VERSION: 2.0.0
+# BUILD_BY: docker-user
+# BUILD_DATE: 2026-02-21
+
+# 验证 ARG 不会直接保留在镜像中（需通过 ENV 传递）
+docker inspect arg-demo:v2 --format '{{range .Config.Env}}{{println .}}{{end}}'
+
+```
+
+
 
 ## 四、元数据和高级指令
 
@@ -348,7 +571,7 @@ ONBUILD <其它指令>
 |    指令     |       说明       |                    示例                     |
 | :---------: | :--------------: | :-----------------------------------------: |
 | HEALTHCHECK | 定义容器健康检查 | `HEALTHCHECK CMD curl -f http://localhost/` |
-|    SHELL    |  指定默认 shell   |         `SHELL ["/bin/bash", "-c"]`         |
+|    SHELL    |  指定默认 shell  |         `SHELL ["/bin/bash", "-c"]`         |
 
 ### 1. HEALTHCHECK
 

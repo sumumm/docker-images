@@ -1,0 +1,13 @@
+# COPY 源文件路径演示
+# cd ../../
+# docker build -f 05-Dockerfile/copy-demo/Dockerfile.path -t copy-demo .
+# docker run -it copy-demo sh  
+FROM alpine:latest
+
+RUN apk add --no-cache tree
+
+WORKDIR /sumu_temp
+COPY 05-Dockerfile/copy-demo/test.txt .
+COPY common .
+COPY common ./common-dst
+
