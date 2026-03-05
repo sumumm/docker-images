@@ -1,0 +1,20 @@
+FROM golang:1.23
+
+# 定义构建参数
+ARG PORT=8080
+# 设置环境变量
+ENV PORT=${PORT}
+
+WORKDIR /app
+
+COPY go.mod .
+COPY main.go .
+
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+
+RUN go mod tidy && go build -ldflags="-w -s" -o server .
+
+EXPOSE ${PORT}
+
+CMD ["./server"]

@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Nginx 反向代理
+  nginx:
+    build: ./nginx
+    # 添加端口映射, 将容器的 80 端口映射为宿主机的 8080
+    ports:
+      - "8080:80"
+    # 依赖关系, 先启动后端和前端, 再启动nginx
+    depends_on:
+      - frontend
+      - backend
+
+  # 前端服务
+  frontend:
+    build: ./frontend
+    # 暴露端口, 仅容器网络可见
+    expose:
+      - "3000"
+    environment:
+      - REACT_APP_API_URL=/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  # 后端服务
+  backend:
+    build: ./backend
+    expose:
+      - "3001"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/todos
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+
+  # MongoDB 数据库
+  mongodb:
+    image: mongo:6
+    expose:
+      - "27017"
+    volumes:
+      - mongodb_data:/data/db
+
+# 定义持久化存储卷
+volumes:
+  mongodb_data: 

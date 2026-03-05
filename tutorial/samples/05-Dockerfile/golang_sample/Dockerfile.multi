@@ -1,0 +1,39 @@
+# 第一阶段：构建阶段
+FROM golang:1.23 AS builder
+
+# 设置工作目录
+WORKDIR /app
+
+# 将源代码复制到容器中
+COPY go.mod .
+COPY main.go .
+
+# 设置必要的 Go 环境变量
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+
+# 编译 Go 应用
+RUN go mod tidy && go build -ldflags="-w -s" -o server .
+
+# 第二阶段：运行阶段
+FROM alpine:latest
+
+# 定义构建参数
+ARG PORT=8081
+# 设置环境变量
+ENV PORT=${PORT}
+
+# 安装 CA 证书，这在某些需要 HTTPS 请求的应用中可能需要
+RUN apk --no-cache add ca-certificates
+
+# 设置工作目录
+WORKDIR /root/
+
+# 从 builder 阶段复制编译好的二进制文件
+COPY --from=builder /app/server .
+
+# 暴露应用端口
+EXPOSE ${PORT}
+
+# 运行应用
+CMD ["./server"]
