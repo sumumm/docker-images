@@ -2,12 +2,12 @@ FROM debian:bookworm
 
 # 更新软件包
 RUN apt-get update && \
-    apt-get install -y curl wget unzip git openssh-server vim zsh
+    apt-get install -y curl wget unzip git openssh-server vim zsh && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # 安装nodejs
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install -y nodejs &&\
-    npm install -g pnpm
+    apt-get install -y nodejs
 
 # install vscode and extension
 RUN curl -fsSL https://code-server.dev/install.sh | sh &&\

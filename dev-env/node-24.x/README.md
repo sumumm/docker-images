@@ -3,6 +3,7 @@
 ### 添加 nodejs 源
 
 ```shell
+# NodeSource 仓库的机制是：setup_24.x 脚本配置的仓库中只包含 Node.js 24.x 系列的最新版本。
 curl -sL https://rpm.nodesource.com/setup_24.x | bash -
 ```
 
@@ -10,6 +11,8 @@ curl -sL https://rpm.nodesource.com/setup_24.x | bash -
 - `https://deb.nodesource.com/setup_24.x`： 这是 NodeSource 提供的一个脚本地址，用于设置 Node.js 的源。setup_24.x 表示要安装 Node.js 版本 24.x，可以根据需要更改版本号。
 - `|`： 这是管道操作符，将前一个命令的输出传递给下一个命令。
 - `bash -`： 则表示以 Bash Shell 运行脚本。
+
+Github：[nodesource/distributions](https://github.com/nodesource/distributions)
 
 ### 查看可用软件版本
 
