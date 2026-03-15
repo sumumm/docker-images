@@ -3,6 +3,7 @@ FROM debian:bookworm
 LABEL maintainer=sumu
 
 ARG GO_VERSION=go1.26.1
+ARG UPX_VERSION=5.1.1
 
 # 系统消息为英文，但仍支持 UTF-8 字符编码、设置时区、避免交互式提示等
 ENV TZ=Asia/Shanghai
@@ -19,7 +20,15 @@ ENV GOPROXY="https://goproxy.cn,direct"
 # 修改软件源并更新软件包
 RUN apt-get update && \
     apt-get install -y curl wget unzip git openssh-server vim zsh &&\
-    apt-get install -y bsdextrautils bison build-essential
+    apt-get install -y bsdextrautils bison build-essential &&\
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+# upx(压缩go可执行文件的工具)
+RUN wget https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz &&\
+    tar xf upx-${UPX_VERSION}-amd64_linux.tar.xz &&\
+    chmod +x upx-${UPX_VERSION}-amd64_linux/upx &&\
+    mv upx-${UPX_VERSION}-amd64_linux/upx /usr/bin/upx &&\
+    rm -rf upx-${UPX_VERSION}-amd64_linux && rm -f upx-${UPX_VERSION}-amd64_linux.tar.xz
 
 # gvm 安装脚本是 bash 脚本，所以这里需要使用 bash
 RUN ["/bin/bash", "-c", "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer) &&\
