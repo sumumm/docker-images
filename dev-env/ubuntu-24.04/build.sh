@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/go-1.26"
+IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/ubuntu-24.04"
 
 show_help() {
     echo "用法: $0 [选项]"
@@ -33,7 +33,7 @@ run_image() {
     echo "运行镜像: $IMAGE_NAME"
     echo "=========================================="
     # 容器启动后直接进入了sumu用户，运行sudo命令会报错，这里需要加上--security-opt选项
-    # docker run -it --rm "$IMAGE_NAME" bash
+    # docker run -it --rm --security-opt=no-new-privileges:false "$IMAGE_NAME" bash
     docker run -it --rm -p 8000:8000 --entrypoint "code-server" -d "$IMAGE_NAME" --bind-addr=0.0.0.0:8000 --auth=none
 }
 
