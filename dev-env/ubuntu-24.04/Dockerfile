@@ -28,6 +28,7 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     chmod +x ./scripts/*.sh && \
     ./scripts/add-zsh-plugins.sh zsh-autosuggestions zsh-syntax-highlighting && \
     ./scripts/set-zsh-env.sh && \
+    ./scripts/set-zsh-theme.sh risto && \
     echo 'setopt NO_AUTO_REMOVE_SLASH' >> /root/.zshrc && \
     mkdir -p ~/.oh-my-zsh/completions && \
     chsh -s $(which zsh)
@@ -52,3 +53,4 @@ COPY common/gitconfig /root/.gitconfig
 # 指定字符集支持命令行输入中文（根据需要选择字符集）
 ENV LANG=C.UTF-8
 ENV LANGUAGE=C.UTF-8
+
