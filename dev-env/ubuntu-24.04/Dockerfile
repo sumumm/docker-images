@@ -22,32 +22,19 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
 
 # zsh终端安装与配置(code-server 默认使用 zsh 终端)
 COPY common/scripts ./scripts
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
-    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting && \
-    chmod +x ./scripts/*.sh && \
-    ./scripts/add-zsh-plugins.sh zsh-autosuggestions zsh-syntax-highlighting && \
-    ./scripts/set-zsh-env.sh && \
-    ./scripts/set-zsh-theme.sh risto && \
-    echo 'setopt NO_AUTO_REMOVE_SLASH' >> /root/.zshrc && \
-    mkdir -p ~/.oh-my-zsh/completions && \
-    chsh -s $(which zsh)
+RUN curl -fsSL -o ~/.git-prompt.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-prompt.bash && \
+    curl -fsSL -o ~/.git-completion.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-completion.bash && \
+    chmod +x ~/.git-prompt.bash ~/.git-completion.bash ./scripts/set-bash-env.sh && \
+    ./scripts/set-bash-env.sh && \
+    chsh -s $(which bash)
 
 # 生成code server中文插件必要的配置文件
 RUN chmod +x ./scripts/create_languagepacks.sh && \
     bash ./scripts/create_languagepacks.sh && \
     rm -f ./scripts/create_languagepacks.sh
 
-# 在最开始 source /etc/profile 
-RUN sed -i '1isetopt NULL_GLOB 2>/dev/null\n\
-source /etc/profile\n\
-unsetopt NULL_GLOB 2>/dev/null\n\
-if command -v docker > /dev/null; then\n\
-    docker completion zsh > ~/.oh-my-zsh/completions/_docker\n\
-fi' $HOME/.zshrc
-
-COPY common/settings.json /root/.vscode-server/data/Machine/settings.json
-COPY common/settings.json /root/.local/share/code-server/Machine/settings.json
+COPY common/set-bash-envtings.template /root/.vscode-server/data/Machine/settings.json
+COPY common/set-bash-envtings.template /root/.local/share/code-server/Machine/settings.json
 COPY common/gitconfig /root/.gitconfig
 
 # 指定字符集支持命令行输入中文（根据需要选择字符集）
