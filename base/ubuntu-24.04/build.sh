@@ -18,7 +18,7 @@ build_image() {
     echo "构建镜像: $IMAGE_NAME"
     echo "=========================================="
     # docker build --no-cache -t "$IMAGE_NAME" .
-    docker build -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
+    docker build --no-cache -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
 }
 
 push_image() {
@@ -33,8 +33,10 @@ run_image() {
     echo "运行镜像: $IMAGE_NAME"
     echo "=========================================="
     # 容器启动后直接进入了sumu用户，运行sudo命令会报错，这里需要加上--security-opt选项
+    # true	禁止进程获取新权限（sudo、setuid 程序失效）
+    # false	允许进程获取新权限（sudo 正常工作）
     # docker run -it --rm --security-opt=no-new-privileges:false "$IMAGE_NAME" bash
-    docker run -it --rm -p 8000:8000 --entrypoint "code-server" -d "$IMAGE_NAME" --bind-addr=0.0.0.0:8000 --auth=none
+    docker run -it --rm --security-opt=no-new-privileges:false -p 8000:8000 --entrypoint "code-server" -d "$IMAGE_NAME" --bind-addr=0.0.0.0:8000 --auth=none
 }
 
 clean() {
