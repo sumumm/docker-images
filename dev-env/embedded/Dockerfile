@@ -12,6 +12,11 @@ RUN curl -o /usr/local/bin/repo https://storage.googleapis.com/git-repo-download
     chmod a+x /usr/local/bin/repo &&\
     ln -s /usr/bin/python3 /usr/bin/python
 
+# install vscode and extension
+RUN code-server --install-extension mads-hartmann.bash-ide-vscode &&\
+    code-server --install-extension llvm-vs-code-extensions.vscode-clangd &&\
+    code-server --install-extension ms-vscode.hexeditor 
+
 # 安装交叉编译工具
 WORKDIR ./scripts
 COPY dev-env/embedded/script/arm-gcc.sh .
