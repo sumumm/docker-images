@@ -4,7 +4,7 @@
 # --no-cache 可以不使用缓存
 docker build -f dev-env/embedded/Dockerfile -t docker.cnb.cool/sumu.k/docker-learning/embedded-env:latest .
 docker images
-docker run -it docker.cnb.cool/sumu.k/docker-learning/embedded-env:latest zsh
+docker run -it docker.cnb.cool/sumu.k/docker-learning/embedded-env:latest bash
 docker push docker.cnb.cool/sumu.k/docker-learning/embedded-env:latest
 
 docker run -it -p 8000:8000 --entrypoint "code-server" -d docker.cnb.cool/sumu.k/docker-learning/embedded-env:latest --bind-addr=0.0.0.0:8000 --auth=none

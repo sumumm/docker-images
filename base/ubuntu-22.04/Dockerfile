@@ -1,28 +1,59 @@
 FROM ubuntu:22.04
 
-ARG UBUNTU_CODENAME="jammy"
+LABEL maintainer=sumu
+LABEL basic_images=ubuntu:22.04
 
-# 指定字符集支持命令行输入中文、设置时区、避免交互式提示等
+# 指定字符集、设置时区、避免交互式提示等
+ENV LANG=C.UTF-8
+ENV LANGUAGE=C.UTF-8
 ENV TZ=Asia/Shanghai
-ENV LANG=zh_CN.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 修改软件源并更新软件包
-RUN rm -f /etc/apt/sources.list.d/ubuntu.sources && \
-    echo "deb http://mirrors.cloud.tencent.com/ubuntu/ ${UBUNTU_CODENAME} main restricted universe multiverse" > /etc/apt/sources.list && \
-    echo "deb http://mirrors.cloud.tencent.com/ubuntu/ ${UBUNTU_CODENAME}-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.cloud.tencent.com/ubuntu/ ${UBUNTU_CODENAME}-backports main restricted universe multiverse" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.cloud.tencent.com/ubuntu/ ${UBUNTU_CODENAME}-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+# 更新软件源并安装基础软件包
+RUN sed -Ei "s@(security|ports|archive).ubuntu.com@mirrors.cloud.tencent.com@g" /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y curl wget unzip vim tree sudo
+    apt-get install -y curl wget unzip git openssh-server vim jq sudo && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-COPY ../../common/gitconfig /root/.gitconfig
+# 拷贝 common/scripts 脚本到镜像的 /scripts
+COPY common/scripts /scripts
+# 拷贝Git相关文件
+COPY common/gitconfig /root/.gitconfig
 
-# 创建用户 sumu，并设置终端颜色
+# 配置bash并设置默认终端为bash（使用全局配置，所有用户共享）
+RUN mkdir -p /usr/local/share/bash && \
+    curl -fsSL -o /usr/local/share/bash/git-prompt.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-prompt.bash && \
+    curl -fsSL -o /usr/local/share/bash/git-completion.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-completion.bash && \
+    chmod +x /usr/local/share/bash/git-prompt.bash /usr/local/share/bash/git-completion.bash /scripts/set-global-bash-env.sh && \
+    /scripts/set-global-bash-env.sh && \
+    chsh -s $(which bash)
+
+# install vscode and extension
+RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
+    code-server --install-extension cnbcool.cnb-welcome &&\
+    code-server --install-extension ms-ceintl.vscode-language-pack-zh-hans &&\
+    code-server --install-extension redhat.vscode-yaml &&\
+    code-server --install-extension cloudstudio.live-server &&\
+    code-server --install-extension tencent-cloud.coding-copilot &&\
+    code-server --install-extension PKief.material-icon-theme &&\
+    code-server --install-extension github.github-vscode-theme &&\
+    code-server --install-extension EditorConfig.EditorConfig
+
+# 生成code server中文插件必要的配置文件
+RUN chmod +x /scripts/create_languagepacks.sh && \
+    bash /scripts/create_languagepacks.sh && \
+    rm -f /scripts/create_languagepacks.sh
+
+# 拷贝vscode配置文件
+COPY common/bash-env-settings.template /root/.vscode-server/data/Machine/settings.json
+COPY common/bash-env-settings.template /root/.local/share/code-server/Machine/settings.json
+
+# 创建用户 sumu,此时系统将会有2个用户 root、sumu
 RUN useradd -m -s /bin/bash sumu && \
     echo "sumu:000000" | chpasswd && \
+    passwd -u root && \
     echo "root:000000" | chpasswd && \
-    usermod -aG sudo sumu && \
-    echo "PS1='\\[\\033[1;32m\\]\\u@\\h:\\[\\033[1;34m\\]\\w\\[\\033[0m\\]\\$ '" >> /home/sumu/.bashrc
+    usermod -aG sudo sumu
 
-USER sumu
+# 清理拷贝过来的脚本文件
+RUN rm -rf /scripts

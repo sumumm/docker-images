@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/ubuntu-22.04"
+IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/embedded-env"
 
 show_help() {
     echo "用法: $0 [选项]"
@@ -18,7 +18,7 @@ build_image() {
     echo "构建镜像: $IMAGE_NAME"
     echo "=========================================="
     # docker build --no-cache -t "$IMAGE_NAME" .
-    docker build --no-cache -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
+    docker build -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
 }
 
 push_image() {

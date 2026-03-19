@@ -36,7 +36,7 @@ Q=$1                                 # github actions 调用的时候不想显�
 #                        根据 Shell 的类型和配置，这些文件中的一个或多个将被读取。
 
 SYSTEM_ENVIRONMENT_FILE=/etc/profile # 系统环境变量位置
-USER_ENV_FILE_ZSHRC=~/.zshrc
+USER_ENV_FILE_BASHRC=~/.bashrc
 USER_ENV_FILE_PROFILE=~/.profile
 SOFTWARE_DIR_PATH=~/smbin        # 软件安装目录
 
@@ -120,9 +120,9 @@ function add_env_info()
     NEW_PATH="${SOFTWARE_DIR_PATH}/${PACKAGE_NAME}/bin"
 
     # 写入 zsh 配置文件（检查是否已存在）
-    if [ -f ${USER_ENV_FILE_ZSHRC} ]; then
-        if ! grep -q "${NEW_PATH}" ${USER_ENV_FILE_ZSHRC}; then
-            echo "export PATH=${NEW_PATH}:\$PATH" >> ${USER_ENV_FILE_ZSHRC}
+    if [ -f ${USER_ENV_FILE_BASHRC} ]; then
+        if ! grep -q "${NEW_PATH}" ${USER_ENV_FILE_BASHRC}; then
+            echo "export PATH=${NEW_PATH}:\$PATH" >> ${USER_ENV_FILE_BASHRC}
         fi
     fi
 
