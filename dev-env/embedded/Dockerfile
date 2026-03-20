@@ -19,7 +19,10 @@ RUN code-server --install-extension mads-hartmann.bash-ide-vscode &&\
     code-server --install-extension ms-vscode.hexeditor 
 
 # 安装交叉编译工具
-WORKDIR ./scripts
-COPY dev-env/embedded/script/arm-gcc.sh .
-RUN chmod +x arm-gcc.sh && \
-    bash ./arm-gcc.sh
+
+COPY dev-env/embedded/script /script
+RUN cd /script &&\
+    chmod +x *.sh && \
+    bash ./arm-gcc.sh &&\
+    bash ./clangd.sh &&\
+    cd / && rm -rf /script
