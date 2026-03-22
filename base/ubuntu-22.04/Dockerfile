@@ -15,18 +15,8 @@ RUN sed -Ei "s@(security|ports|archive).ubuntu.com@mirrors.cloud.tencent.com@g" 
     apt-get install -y curl wget unzip git openssh-server vim jq sudo && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-# 拷贝 common/scripts 脚本到镜像的 /scripts
-COPY common/scripts /scripts
-# 拷贝Git相关文件
-COPY common/gitconfig /root/.gitconfig
-
-# 配置bash并设置默认终端为bash（使用全局配置，所有用户共享）
-RUN mkdir -p /usr/local/share/bash && \
-    curl -fsSL -o /usr/local/share/bash/git-prompt.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-prompt.bash && \
-    curl -fsSL -o /usr/local/share/bash/git-completion.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-completion.bash && \
-    chmod +x /usr/local/share/bash/git-prompt.bash /usr/local/share/bash/git-completion.bash /scripts/set-global-bash-env.sh && \
-    /scripts/set-global-bash-env.sh && \
-    chsh -s $(which bash)
+# 拷贝相关文件, 拷贝 common 所有文件到镜像的 /common
+COPY common /common
 
 # install vscode and extension
 RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
@@ -40,13 +30,20 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
     code-server --install-extension EditorConfig.EditorConfig
 
 # 生成code server中文插件必要的配置文件
-RUN chmod +x /scripts/create_languagepacks.sh && \
-    bash /scripts/create_languagepacks.sh && \
-    rm -f /scripts/create_languagepacks.sh
+RUN chmod +x /common/scripts/create_languagepacks.sh && \
+    bash /common/scripts/create_languagepacks.sh && \
+    mkdir -p /root/.vscode-server/data/Machine /root/.local/share/code-server/Machine && \
+    cp -f /common/settings.json /root/.vscode-server/data/Machine/settings.json && \
+    cp -f /common/settings.json /root/.local/share/code-server/Machine/settings.json
 
-# 拷贝vscode配置文件
-COPY common/bash-env-settings.template /root/.vscode-server/data/Machine/settings.json
-COPY common/bash-env-settings.template /root/.local/share/code-server/Machine/settings.json
+# 配置bash并设置默认终端为bash（使用全局配置，所有用户共享）
+# 这里会修改 settings.json 为bash，一定要放在后面
+RUN mkdir -p /usr/local/share/bash && \
+    curl -fsSL -o /usr/local/share/bash/git-prompt.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-prompt.bash && \
+    curl -fsSL -o /usr/local/share/bash/git-completion.bash https://cnb.cool/sumu.k/ohmybash/-/git/raw/main/git-completion.bash && \
+    chmod +x /usr/local/share/bash/git-*.bash /common/scripts/set-global-bash-env.sh && \
+    bash /common/scripts/set-global-bash-env.sh && \
+    chsh -s $(which bash)
 
 # 创建用户 sumu,此时系统将会有2个用户 root、sumu
 RUN useradd -m -s /bin/bash sumu && \
@@ -55,5 +52,6 @@ RUN useradd -m -s /bin/bash sumu && \
     echo "root:000000" | chpasswd && \
     usermod -aG sudo sumu
 
-# 清理拷贝过来的脚本文件
-RUN rm -rf /scripts
+# 处理其他文件并清理拷贝过来的common目录
+RUN cp -f /common/gitconfig /root/.gitconfig &&\
+    rm -rf /common

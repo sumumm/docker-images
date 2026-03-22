@@ -25,4 +25,25 @@ if [ -f /usr/local/share/bash/git-prompt.bash ]; then
 fi
 EOF
 
+# 将 VSCode 默认终端配置从 zsh 改为 bash
+# sed 表达式说明：s/旧值/新值/g
+#   - 匹配 "terminal.integrated.defaultProfile.linux": "zsh"
+#   - 替换为 "terminal.integrated.defaultProfile.linux": "bash"
+#   - g 标志表示全局替换（一行中所有匹配项）
+sed_expr='s/"terminal\.integrated\.defaultProfile\.linux": "zsh"/"terminal.integrated.defaultProfile.linux": "bash"/g'
+# 需要修改的 VSCode 设置文件路径列表
+settings_files=(
+    /root/.vscode-server/data/Machine/settings.json
+    /root/.local/share/code-server/Machine/settings.json
+)
+for f in "${settings_files[@]}"; do
+    if [ -f "$f" ]; then
+        if sed -i "$sed_expr" "$f"; then
+            echo "✅ 已更新 $f"
+        else
+            echo "❌ 更新 $f 失败"
+        fi
+    fi
+done
+
 echo "✅ 成功配置全局 bash 环境"
