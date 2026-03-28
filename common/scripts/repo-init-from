@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+# 从远程仓库浅克隆指定 commit/分支到本地
+# 主要是以下几条命令的封装
+# git clone --depth 1 https://github.com/repo-name.git
+# cd repo-name
+# git fetch --depth 1 origin commit-id
+# git checkout commit-id
+
+function _log() {
+  local timestamp=$(date +'%Y-%m-%d %H:%M.%S')
+  local SET_COLOR='\033[32m'
+  local CLEAR_COLOR='\033[0m'
+  printf "$SET_COLOR%s \$$CLEAR_COLOR %s\n" "$timestamp" "$*"
+}
+
+# 解析命令行参数
+COMMIT_ID=""
+BRANCH_NAME=""
+
+usage() {
+  echo "示例:"
+  echo "  repo-init-from -c <commit-id> <git-url> [<target-dir>]  按 commit id 拉取"
+  echo "  repo-init-from -b <branch> <git-url> [<target-dir>]     按分支拉取最新提交"
+  echo "  repo-init-from <git-url> [<target-dir>]                 拉取默认分支最新提交"
+  echo ""
+  echo "  -c <commit-id>     指定要拉取的 commit id"
+  echo "  -b <branch-name>   指定要拉取的分支"
+  exit 1
+}
+
+_log "共有 $# 个参数: $*"
+while getopts "c:b:" opt; do
+  case $opt in
+    c) COMMIT_ID="$OPTARG" ;;
+    b) BRANCH_NAME="$OPTARG" ;;
+    *) usage ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+GIT_URL=$1
+if [[ -z "$GIT_URL" ]]; then
+  echo "error: git url 未指定."
+  usage
+fi
+
+REPO_NAME=$(basename "$GIT_URL" .git)
+TARGET_DIR=${2:-$REPO_NAME}
+
+if [[ -n "$COMMIT_ID" ]]; then
+  # 按 commit id 拉取
+  _log "git clone --depth 1 $GIT_URL $TARGET_DIR"
+  git clone --depth 1 "$GIT_URL" "$TARGET_DIR"
+  ret=$?; [ $ret -ne 0 ] && exit $ret;
+  cd "$TARGET_DIR"
+
+  _log "git fetch --depth 1 origin $COMMIT_ID"
+  git fetch --depth 1 origin "$COMMIT_ID"
+  ret=$?; [ $ret -ne 0 ] && exit $ret;
+
+  OLD_BRANCH=$(git branch --show-current)
+  _log "git switch -c main FETCH_HEAD"
+  git switch -c main FETCH_HEAD
+  ret=$?; [ $ret -ne 0 ] && exit $ret;
+
+  _log "git branch -D $OLD_BRANCH"
+  git branch -D "$OLD_BRANCH"
+
+elif [[ -n "$BRANCH_NAME" ]]; then
+  # 按分支名拉取
+  _log "git clone --depth 1 --single-branch --branch $BRANCH_NAME $GIT_URL $TARGET_DIR"
+  git clone --depth 1 --single-branch --branch "$BRANCH_NAME" "$GIT_URL" "$TARGET_DIR"
+  ret=$?; [ $ret -ne 0 ] && exit $ret;
+
+else
+  # 拉取默认分支
+  _log "git clone --depth 1 $GIT_URL $TARGET_DIR"
+  git clone --depth 1 "$GIT_URL" "$TARGET_DIR"
+  ret=$?; [ $ret -ne 0 ] && exit $ret;
+fi
+
+cd "$TARGET_DIR"
+
+_log "当前分支:"
+git branch -v
+
+_log "完成"

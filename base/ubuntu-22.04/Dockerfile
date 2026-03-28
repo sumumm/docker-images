@@ -54,4 +54,6 @@ RUN useradd -m -s /bin/bash sumu && \
 
 # 处理其他文件并清理拷贝过来的common目录
 RUN cp -f /common/gitconfig /root/.gitconfig &&\
+    cp -f /common/scripts/repo-init-from /usr/local/bin/repo-init-from &&\
+    chmod +x /usr/local/bin/repo-init-from &&\
     rm -rf /common
