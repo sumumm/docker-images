@@ -15,6 +15,13 @@ if [ -n "$VS_CODE_PATH" ]; then
     export PATH="$VS_CODE_PATH:$PATH"
 fi
 
+# 启用 bash-completion
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+fi
+
 # Git 补全和提示（全局配置）
 if [ -f /usr/local/share/bash/git-completion.bash ]; then
     source /usr/local/share/bash/git-completion.bash

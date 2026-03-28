@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 更新软件源并安装基础软件包
 RUN sed -Ei "s@(security|ports|archive).ubuntu.com@mirrors.cloud.tencent.com@g" /etc/apt/sources.list.d/ubuntu.sources && \
     apt-get update && \
-    apt-get install -y curl wget unzip git openssh-server vim jq sudo && \
+    apt-get install -y curl wget unzip git openssh-server vim jq sudo bash-completion && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # 拷贝相关文件, 拷贝 common 所有文件到镜像的 /common
