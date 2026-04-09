@@ -1,6 +1,7 @@
 #!/bin/bash
 
 IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/ubuntu-24.04"
+NO_CACHE=""
 
 show_help() {
     echo "用法: $0 [选项]"
@@ -10,6 +11,7 @@ show_help() {
     echo "  -r       运行镜像"
     echo "  -c c|i   清除所有容器(c)或镜像(img)"
     echo "  -a       执行所有操作 (构建+推送+运行)"
+    echo "  -f       构建时不使用缓存 (--no-cache)"
     echo "  -h       显示帮助信息"
 }
 
@@ -18,7 +20,7 @@ build_image() {
     echo "构建镜像: $IMAGE_NAME"
     echo "=========================================="
     # docker build --no-cache -t "$IMAGE_NAME" .
-    docker build --no-cache -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
+    docker build $NO_CACHE -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
 }
 
 push_image() {
@@ -36,7 +38,7 @@ run_image() {
     # true	禁止进程获取新权限（sudo、setuid 程序失效）
     # false	允许进程获取新权限（sudo 正常工作）
     # docker run -it --rm --security-opt=no-new-privileges:false "$IMAGE_NAME" bash
-    docker run -it --rm --security-opt=no-new-privileges:false -p 8000:8000 --entrypoint "code-server" -d "$IMAGE_NAME" --bind-addr=0.0.0.0:8000 --auth=none
+    docker run -it --rm -p 8000:8000 --entrypoint "code-server" -d "$IMAGE_NAME" --bind-addr=0.0.0.0:8000 --auth=none
 }
 
 clean() {
@@ -71,10 +73,13 @@ main() {
         exit 1
     fi
 
-    while getopts "bprc:ah" opt; do
+    while getopts "bfprc:ah" opt; do
         case $opt in
             b)
                 build_image
+                ;;
+            f)
+                NO_CACHE="--no-cache"
                 ;;
             p)
                 push_image
