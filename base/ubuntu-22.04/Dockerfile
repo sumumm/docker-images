@@ -29,12 +29,14 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
     code-server --install-extension github.github-vscode-theme &&\
     code-server --install-extension EditorConfig.EditorConfig
 
-# 生成code server中文插件必要的配置文件
+# vscode配置
 RUN chmod +x /common/scripts/create_languagepacks.sh && \
     bash /common/scripts/create_languagepacks.sh && \
     mkdir -p /root/.vscode-server/data/Machine /root/.local/share/code-server/Machine && \
     cp -f /common/settings.json /root/.vscode-server/data/Machine/settings.json && \
-    cp -f /common/settings.json /root/.local/share/code-server/Machine/settings.json
+    cp -f /common/settings.json /root/.local/share/code-server/Machine/settings.json &&\
+    mkdir -p /root/.local/share/code-server/User/snippets/ &&\ 
+    cp -f /common/snippets-vscode/* /root/.local/share/code-server/User/snippets/
 
 # 配置bash并设置默认终端为bash（使用全局配置，所有用户共享）
 # 这里会修改 settings.json 为bash，一定要放在后面
