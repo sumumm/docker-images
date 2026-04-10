@@ -50,8 +50,8 @@ RUN mkdir -p /usr/local/share/bash && \
 # 安装 skills, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
 RUN mkdir -p ~/.codebuddy/skills && \
     git clone https://cnb.cool/sumu.k/my-skills /tmp/my-skills &&\
-    cp -rf /tmp/my-skills/skills/markdowncli ~/.codebuddy/skills/markdowncli &&\
-    rm -rf /tmp/my-skills
+    cp -rf /tmp/my-skills/skills/* ~/.codebuddy/skills/ &&\
+    rm -rf /tmp/my-skills ~/.codebuddy/skills/SKILL.md
 
 # 创建用户 sumu,此时系统将会有2个用户 root、sumu
 RUN useradd -m -s /bin/bash sumu && \
