@@ -47,6 +47,14 @@ RUN mkdir -p /usr/local/share/bash && \
     bash /common/scripts/set-global-bash-env.sh && \
     chsh -s $(which bash)
 
+# 安装 node 和 claude code
+RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
+    cd /tmp/my-linux/Frontend &&\
+    chmod +x *.sh &&\
+    bash -c './nodejs.sh' &&\
+    bash -c './claude.sh' &&\
+    rm -rf /tmp/my-linux
+
 # 安装 skills, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
 RUN mkdir -p ~/.codebuddy/skills && \
     git clone https://cnb.cool/sumu.k/my-skills /tmp/my-skills &&\
