@@ -5,10 +5,6 @@ RUN apt-get update && \
     apt-get install -y curl wget unzip git openssh-server vim zsh && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-# 安装nodejs
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install -y nodejs
-
 # install vscode and extension
 RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
     code-server --install-extension cnbcool.cnb-welcome &&\
@@ -42,6 +38,21 @@ fi' $HOME/.zshrc
 COPY common/settings.json /root/.vscode-server/data/Machine/settings.json
 COPY common/settings.json /root/.local/share/code-server/Machine/settings.json
 COPY common/gitconfig /root/.gitconfig
+
+# 安装 node 和 claude code
+RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
+    cd /tmp/my-linux/Frontend &&\
+    chmod +x *.sh &&\
+    bash -c 'NODE_VERSION=24 ./nodejs.sh' &&\
+    bash -c './claude.sh' &&\
+    rm -rf /tmp/my-linux
+
+# 安装 skills, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
+RUN git clone https://cnb.cool/sumu.k/my-skills /tmp/my-skills &&\
+    chmod +x /tmp/my-skills/install.sh &&\
+    /tmp/my-skills/install.sh claude &&\
+    /tmp/my-skills/install.sh codebuddy &&\
+    rm -rf /tmp/my-skills
 
 # 指定字符集支持命令行输入中文（根据需要选择字符集）
 ENV LANG=C.UTF-8
