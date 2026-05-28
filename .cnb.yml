@@ -15,6 +15,13 @@ main:
             ./build.sh -b
             ./build.sh -p
 
+            for dir in /workspace/dev-env/*/; do
+              cd "$dir"
+              echo "current dir is $dir"
+              ./build.sh -b
+              ./build.sh -p
+            done
+
 $:
   vscode:
     - docker:
