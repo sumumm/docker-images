@@ -1,0 +1,22 @@
+# 匹配所有分支名
+"**":
+  web_trigger_build_image:
+    - services:
+        - docker
+      stages:
+        - name: print web param
+          script: |
+            echo "image_tag=${image_tag}"
+            echo "dockerfile=${dockerfile}"
+        - name: build-and-push # 任务名称
+          script: |
+            cd base/ubuntu-22.04
+            ./build.sh -b
+            ./build.sh -p
+
+            for dir in /workspace/dev-env/*/; do
+              cd "$dir"
+              echo "current dir is $dir"
+              ./build.sh -b
+              ./build.sh -p
+            done
