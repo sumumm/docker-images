@@ -43,6 +43,8 @@ $:
           #   - common/gitconfig
           #   - common/scripts/add-zsh-plugins.sh
           #   - common/scripts/set-zsh-env.sh
+      imports:
+        - https://cnb.cool/sumu.k/secret-key/-/blob/main/access-token.yml
       services:
         - vscode
         - docker
