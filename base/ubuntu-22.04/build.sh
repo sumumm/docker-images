@@ -1,21 +1,74 @@
 #!/bin/bash
 
-IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/ubuntu-22.04"
+REPO_NAME="${CNB_REPO_SLUG_LOWERCASE#*/}"
+PKG_NAME="ubuntu-22.04"
+IMAGE_NAME="${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/${PKG_NAME}"
 NO_CACHE=""
+
+# API 配置
+API_URL="${CNB_API_ENDPOINT:-https://api.cnb.build}"
+TOKEN="${REGISTRY_PKG_ACCESS_TOKEN:-$CNB_TOKEN}"
+
+declare -a HEADERS=(
+  -H "Accept: application/vnd.cnb.api+json"
+  -H "Authorization: Bearer ${TOKEN}"
+)
+
+# 发送 GET 请求，输出响应体
+api_get() {
+  local url="$1"
+  curl -s -f \
+       --request GET \
+       --url "$url" \
+       "${HEADERS[@]}" \
+       || echo ''
+}
+
+# 发送 DELETE 请求
+api_delete() {
+  local url="$1"
+  local status
+  status=$(curl -s -o /dev/null -w '%{http_code}' \
+                --request DELETE \
+                --url "$url" \
+                "${HEADERS[@]}")
+  echo "删除请求状态码: ${status}"
+  if [[ "$status" == 2?? ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# 打印制品标签列表
+# 用法: print_package_tags <api_url>
+print_package_tags() {
+    local api_url="$1"
+    local tags_json
+    tags_json=$(api_get "${api_url}/-/tags")
+    if [[ -n "$tags_json" ]]; then
+        echo "制品标签列表:"
+        echo "$tags_json" | jq -r '.docker[]?.name // empty' 2>/dev/null | while IFS= read -r tag; do
+            echo "  - ${tag}"
+        done
+    fi
+}
 
 show_help() {
     echo "用法: $0 [选项]"
     echo "选项:"
-    echo "  -b       构建镜像"
-    echo "  -p       推送镜像"
-    echo "  -r       运行镜像"
-    echo "  -c c|i   清除所有容器(c)或镜像(img)"
-    echo "  -a       执行所有操作 (构建+推送+运行)"
-    echo "  -f       构建时不使用缓存 (--no-cache)"
-    echo "  -h       显示帮助信息"
+    echo "  -b           构建镜像"
+    echo "  -p           推送镜像"
+    echo "  -r run       运行镜像"
+    echo "  -r get       查询远程镜像"
+    echo "  -r delete    删除远程镜像"
+    echo "  -c c|i       清除所有容器(c)或镜像(img)"
+    echo "  -a           执行所有操作 (构建+推送+运行)"
+    echo "  -f           构建时不使用缓存 (--no-cache)"
+    echo "  -h           显示帮助信息"
 }
 
-build_image() {
+do_build_image() {
     echo "=========================================="
     echo "构建镜像: $IMAGE_NAME"
     echo "=========================================="
@@ -23,72 +76,15 @@ build_image() {
     docker build $NO_CACHE -f "$(dirname "$0")/Dockerfile" -t "$IMAGE_NAME" "$(dirname "$0")/../.."
 }
 
-# 查询 CNB 远程制品信息：制品存在性、标签列表、出生证明
-# 参数: $1=slug, $2=pkg_type, $3=pkg_name, $4=arch(可选, 默认linux/amd64)
-# 返回: 0=制品存在, 1=制品不存在
-query_package() {
-    local slug="$1"
-    local pkg_type="$2"
-    local pkg_name="$3"
-    local arch="${4:-linux/amd64}"
-    local api_url="${CNB_API_ENDPOINT}/${slug}/-/packages/${pkg_type}/${pkg_name}"
-
-    # 1. 查询制品是否存在
-    echo "正在查询远程制品: $api_url"
-    local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-        -X GET "$api_url" \
-        -H "Accept: application/vnd.cnb.api+json" \
-        -H "Authorization: Bearer $CNB_TOKEN")
-
-    echo "API 返回状态码: $http_code"
-
-    if [ "$http_code" != "200" ]; then
-        echo "未找到已有制品"
-        return 1
-    fi
-
-    # 2. 查询并打印标签列表
-    echo "发现已存在的远程制品:"
-    echo "  ${slug}/-/packages/${pkg_type}/${pkg_name}"
-    echo ""
-    local tag_list
-    tag_list=$(curl -s -X GET "${api_url}/-/tags" \
-        -H "Accept: application/vnd.cnb.api+json" \
-        -H "Authorization: Bearer $CNB_TOKEN")
-    echo "--- 制品标签列表 ---"
-    echo "$tag_list" | jq '.' 2>/dev/null || echo "$tag_list"
-
-    # 3. 遍历每个 tag，获取出生证明 (GetPackageTagProvenance)
-    echo ""
-    echo "--- 制品出生证明 ---"
-    local tags
-    tags=$(echo "$tag_list" | jq -r '.docker[].name // empty' 2>/dev/null)
-    for tag in $tags; do
-        [ -z "$tag" ] && continue
-        echo ">>> Tag: ${tag}"
-        curl -s -X GET "${api_url}/-/tag/${tag}/provenance" \
-            -H "Accept: application/vnd.cnb.api+json" \
-            -H "Authorization: Bearer $CNB_TOKEN" \
-            -G --data-urlencode "arch=${arch}" | jq '.' 2>/dev/null || echo "  (无出生证明或查询失败)"
-        echo ""
-    done
-    echo "--- 出生证明结束 ---"
-    return 0
-}
-
-push_image() {
+do_push_image() {
     echo "=========================================="
     echo "推送镜像: $IMAGE_NAME"
     echo "=========================================="
 
-    # local slug="${CNB_REPO_SLUG}"
-    # query_package "$slug" "docker" "ubuntu-22.04" "linux/amd64"
-
     docker push "$IMAGE_NAME"
 }
 
-run_image() {
+do_run_image() {
     echo "=========================================="
     echo "运行镜像: $IMAGE_NAME"
     echo "=========================================="
@@ -99,7 +95,46 @@ run_image() {
     docker run -it --rm -p 8000:8000 --entrypoint "code-server" -d "$IMAGE_NAME" --bind-addr=0.0.0.0:8000 --auth=none
 }
 
-clean() {
+do_get_remote_image() {
+    local api_url="${API_URL}/${CNB_REPO_SLUG}/-/packages/docker/${REPO_NAME}/${PKG_NAME}"
+    echo "=========================================="
+    echo "查询远程镜像: ${REPO_NAME}/${PKG_NAME}"
+    echo "=========================================="
+    local response
+    response=$(api_get "$api_url")
+    if [[ -n "$response" ]]; then
+        echo "远程镜像信息:"
+        echo "$response" | jq .
+        print_package_tags "$api_url"
+    else
+        echo "未找到远程镜像"
+    fi
+}
+
+# 删除远程镜像（整个制品，包括所有标签）
+# 注意：DeletePackage API 会删除该制品的全部标签，不是仅删除单个标签
+do_delete_remote_image() {
+    local api_url="${API_URL}/${CNB_REPO_SLUG}/-/packages/docker/${REPO_NAME}/${PKG_NAME}"
+    echo "=========================================="
+    echo "删除远程镜像: ${REPO_NAME}/${PKG_NAME}"
+    echo "=========================================="
+    local response
+    response=$(api_get "$api_url")
+    if [[ -n "$response" ]]; then
+        echo "发现远程镜像: $api_url"
+        print_package_tags "$api_url"
+        echo "准备删除..."
+        if api_delete "$api_url"; then
+            echo "远程镜像已删除"
+        else
+            echo "删除远程镜像失败"
+        fi
+    else
+        echo "未找到远程镜像"
+    fi
+}
+
+do_clean() {
     local clean_type="$1"
     case "$clean_type" in
         c|containers)
@@ -131,25 +166,40 @@ main() {
         exit 1
     fi
 
-    while getopts "bfprc:ah" opt; do
+    while getopts "bfpr:c:ah" opt; do
         case $opt in
             b)
-                build_image
+                do_build_image
                 ;;
             f)
                 NO_CACHE="--no-cache"
                 ;;
             p)
-                push_image
+                do_push_image
                 ;;
             r)
-                run_image
+                case "$OPTARG" in
+                    run|r)
+                        do_run_image
+                        ;;
+                    get|g)
+                        do_get_remote_image
+                        ;;
+                    delete|d)
+                        do_delete_remote_image
+                        ;;
+                    *)
+                        echo "无效的 -r 参数: $OPTARG" >&2
+                        show_help
+                        exit 1
+                        ;;
+                esac
                 ;;
             c)
-                clean "$OPTARG"
+                do_clean "$OPTARG"
                 ;;
             a)
-                build_image && push_image && run_image
+                do_build_image && do_push_image && do_run_image
                 ;;
             h)
                 show_help
