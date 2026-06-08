@@ -45,6 +45,7 @@ RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
     chmod +x *.sh &&\
     bash -c 'NODE_VERSION=24 ./nodejs.sh' &&\
     bash -c './claude.sh' &&\
+    bash -c './opencode.sh' &&\
     rm -rf /tmp/my-linux
 
 # 安装 skills, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
@@ -52,6 +53,7 @@ RUN git clone https://cnb.cool/smk.h/my-skills /tmp/my-skills &&\
     chmod +x /tmp/my-skills/install.sh &&\
     /tmp/my-skills/install.sh claude &&\
     /tmp/my-skills/install.sh codebuddy &&\
+    /tmp/my-skills/install.sh opencode &&\
     rm -rf /tmp/my-skills
 
 # 指定字符集支持命令行输入中文（根据需要选择字符集）
