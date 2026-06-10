@@ -6,17 +6,84 @@
       stages:
         - name: print web param
           script: |
-            echo "image_tag=${image_tag}"
-            echo "dockerfile=${dockerfile}"
-        - name: build-and-push # 任务名称
+            echo "image_dirs=${image_dirs}"
+        - name: build-and-push
           script: |
-            cd base/ubuntu-22.04
-            ./build.sh -b
-            ./build.sh -p
+            # 预置的镜像目录列表
+            ALL_DIRS=(
+              "base/ubuntu-22.04"
+              "base/ubuntu-24.04"
+              "dev-env/go-1.26"
+              "dev-env/node-24.x"
+              "dev-env/python"
+            )
 
-            for dir in /workspace/dev-env/*/; do
-              cd "$dir"
-              echo "current dir is $dir"
-              ./build.sh -b
-              ./build.sh -p
+            # 解析选择的目录
+            # image_dirs 的值：
+            #   - 为空或 "all"  → 构建所有镜像
+            #   - 单选如 "base/ubuntu-22.04"  → 只构建该目录
+            #   - 多选如 "base/ubuntu-22.04,dev-env/go-1.26"  → 构建选中的多个目录
+            SELECTED_DIRS=()
+            if [ -z "${image_dirs}" ] || [ "${image_dirs}" = "all" ]; then
+              # 未选择或选择了"全部"，构建所有镜像
+              echo "将构建所有镜像"
+              SELECTED_DIRS=("${ALL_DIRS[@]}")
+            else
+              # 按逗号分隔多选项（多选时 image_dirs 为逗号分隔的字符串）
+              IFS=',' read -ra DIR_ARRAY <<< "${image_dirs}"
+              for dir in "${DIR_ARRAY[@]}"; do
+                dir=$(echo "$dir" | xargs)
+                if [ -n "$dir" ] && [ "$dir" != "all" ]; then
+                  SELECTED_DIRS+=("$dir")
+                fi
+              done
+              # 如果过滤后为空，则构建全部
+              if [ ${#SELECTED_DIRS[@]} -eq 0 ]; then
+                echo "未选择有效目录，将构建所有镜像"
+                SELECTED_DIRS=("${ALL_DIRS[@]}")
+              fi
+            fi
+
+            echo "=========================================="
+            echo "将构建以下镜像目录:"
+            for dir in "${SELECTED_DIRS[@]}"; do
+              echo "  - $dir"
             done
+            echo "=========================================="
+
+            # 构建并推送选中的镜像
+            FAILED_DIRS=()
+            for dir in "${SELECTED_DIRS[@]}"; do
+              FULL_DIR="/workspace/${dir}"
+              if [ -d "$FULL_DIR" ] && [ -f "$FULL_DIR/build.sh" ]; then
+                echo ""
+                echo "=========================================="
+                echo "开始构建: $dir"
+                echo "=========================================="
+                cd "$FULL_DIR" || { echo "无法进入目录: $dir"; FAILED_DIRS+=("$dir"); continue; }
+                if ./build.sh -b && ./build.sh -p; then
+                  echo "✓ $dir 构建并推送成功"
+                else
+                  echo "✗ $dir 构建或推送失败"
+                  FAILED_DIRS+=("$dir")
+                fi
+              else
+                echo "✗ 目录不存在或缺少 build.sh: $dir"
+                FAILED_DIRS+=("$dir")
+              fi
+            done
+
+            # 输出构建结果汇总
+            echo ""
+            echo "=========================================="
+            echo "构建结果汇总:"
+            echo "=========================================="
+            if [ ${#FAILED_DIRS[@]} -eq 0 ]; then
+              echo "所有镜像构建并推送成功!"
+            else
+              echo "以下目录构建失败:"
+              for dir in "${FAILED_DIRS[@]}"; do
+                echo "  ✗ $dir"
+              done
+              exit 1
+            fi

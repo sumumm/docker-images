@@ -89,21 +89,27 @@ branch:
             required: false
             placeholder: 例如:ubuntu:20.04 或 pytorch/pytorch:latest
       - name: 构建镜像
-        description: 构建并推送 Docker 镜像
+        description: 构建并推送 Docker 镜像，可选择指定目录或构建全部
         event: web_trigger_build_image
         isDefault: false
         inputs:
-          image_tag:
-            name: 镜像标签
-            description: 构建后的镜像标签
-            placeholder: 请输入镜像标签,如 v1.0.0
-            required: true
-            type: input
-            default: latest
-          dockerfile:
-            name: Dockerfile 路径
-            description: Dockerfile 文件路径
-            placeholder: 请输入 Dockerfile 路径
+          image_dirs:
+            name: 镜像目录
+            description: 选择要构建的镜像目录(可多选)，不选则默认构建所有镜像
+            type: select
             required: false
-            type: input
-            default: Dockerfile
+            default: all
+            multiple: true
+            options:
+              - name: 全部镜像
+                value: all
+              - name: 基础镜像 - Ubuntu 22.04
+                value: base/ubuntu-22.04
+              - name: 基础镜像 - Ubuntu 24.04
+                value: base/ubuntu-24.04
+              - name: 开发环境 - Go 1.26
+                value: dev-env/go-1.26
+              - name: 开发环境 - Node 24.x
+                value: dev-env/node-24.x
+              - name: 开发环境 - Python 3.11
+                value: dev-env/python
