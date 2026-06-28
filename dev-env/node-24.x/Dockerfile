@@ -48,12 +48,15 @@ RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
     bash -c './opencode.sh' &&\
     rm -rf /tmp/my-linux
 
-# 安装 skills, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
+# 安装 skills（软链接安装，推荐）, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
+# 软链接方式通过 ~/.smskills 中间镜像层解耦仓库路径，删除临时克隆目录后 agent 链接不会断
+# 先 update 做本地镜像，再用 link 按需链接指定工具
 RUN git clone https://cnb.cool/smk.h/my-skills /tmp/my-skills &&\
-    chmod +x /tmp/my-skills/install.sh &&\
-    /tmp/my-skills/install.sh claude &&\
-    /tmp/my-skills/install.sh codebuddy &&\
-    /tmp/my-skills/install.sh opencode &&\
+    chmod +x /tmp/my-skills/linux-skills.sh &&\
+    /tmp/my-skills/linux-skills.sh update &&\
+    /tmp/my-skills/linux-skills.sh link claude &&\
+    /tmp/my-skills/linux-skills.sh link opencode &&\
+    /tmp/my-skills/linux-skills.sh link codebuddy &&\
     rm -rf /tmp/my-skills
 
 # 指定字符集支持命令行输入中文（根据需要选择字符集）
