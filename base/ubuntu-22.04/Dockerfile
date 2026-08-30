@@ -64,6 +64,7 @@ RUN git clone https://cnb.cool/smk.h/my-skills /tmp/my-skills &&\
     /tmp/my-skills/linux-skills.sh link claude &&\
     /tmp/my-skills/linux-skills.sh link opencode &&\
     /tmp/my-skills/linux-skills.sh link codebuddy &&\
+    /tmp/my-skills/linux-skills.sh link zcode &&\
     rm -rf /tmp/my-skills
 
 # 创建用户 sumu,此时系统将会有2个用户 root、sumu
