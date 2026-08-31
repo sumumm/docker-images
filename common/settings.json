@@ -5,6 +5,8 @@
   "workbench.activityBar.location": "top",
   // 解决github-copilot默认会显示出来的问题
   "workbench.secondarySideBar.defaultVisibility": "hidden",
+  //卡片风格的UI
+  "workbench.experimental.modernUI": true,
 
   // 开启后终端敲命令也会出现命令补全提示
   "terminal.integrated.suggest.enabled": false,
