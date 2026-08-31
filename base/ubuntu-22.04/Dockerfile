@@ -51,7 +51,7 @@ RUN mkdir -p /usr/local/share/bash && \
 RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
     cd /tmp/my-linux/Frontend &&\
     chmod +x *.sh &&\
-    bash -c './nodejs.sh' &&\
+    bash -c 'NODE_VERSION=24 ./nodejs.sh' &&\
     bash -c './claude.sh' &&\
     rm -rf /tmp/my-linux
 
