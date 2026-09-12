@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 更新软件源并安装基础软件包
 RUN sed -Ei "s@(security|ports|archive).ubuntu.com@mirrors.cloud.tencent.com@g" /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y curl wget unzip git openssh-server vim jq sudo bash-completion && \
+    apt-get install -y curl wget unzip git openssh-server vim jq sudo bash-completion lsof && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # 拷贝相关文件, 拷贝 common 所有文件到镜像的 /common
@@ -65,6 +65,7 @@ RUN git clone https://cnb.cool/smk.h/my-skills /tmp/my-skills &&\
     /tmp/my-skills/linux-skills.sh link opencode &&\
     /tmp/my-skills/linux-skills.sh link codebuddy &&\
     /tmp/my-skills/linux-skills.sh link zcode &&\
+    /tmp/my-skills/linux-skills.sh link dsh &&\
     rm -rf /tmp/my-skills
 
 # 创建用户 sumu,此时系统将会有2个用户 root、sumu
