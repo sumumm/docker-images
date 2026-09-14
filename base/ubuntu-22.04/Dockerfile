@@ -12,7 +12,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 更新软件源并安装基础软件包
 RUN sed -Ei "s@(security|ports|archive).ubuntu.com@mirrors.cloud.tencent.com@g" /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y curl wget unzip git openssh-server vim jq sudo bash-completion lsof && \
+    apt-get install -y curl wget unzip git openssh-client openssh-server vim jq sudo bash-completion lsof && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+# 安装 cloudflared（Cloudflare Tunnel 客户端）
+# 用途：CNB 云环境无法做 L3 VPN/端口映射，只能出方向访问公网，
+#      需要 cloudflared access ssh/tcp 接入 Windows 侧的快速隧道（Quick Tunnel）
+RUN mkdir -p /usr/share/keyrings && \
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg -o /usr/share/keyrings/cloudflare-main.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared $(. /etc/os-release && echo "${VERSION_CODENAME}") main" > /etc/apt/sources.list.d/cloudflared.list && \
+    apt-get update && \
+    apt-get install -y cloudflared && \
+    cloudflared --version && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # 拷贝相关文件, 拷贝 common 所有文件到镜像的 /common
@@ -27,7 +38,8 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh &&\
     code-server --install-extension tencent-cloud.coding-copilot &&\
     code-server --install-extension PKief.material-icon-theme &&\
     code-server --install-extension github.github-vscode-theme &&\
-    code-server --install-extension EditorConfig.EditorConfig
+    code-server --install-extension EditorConfig.EditorConfig &&\
+    code-server --install-extension ms-vs-extensions.vssm-tool
 
 # vscode配置
 RUN chmod +x /common/scripts/create_languagepacks.sh && \
