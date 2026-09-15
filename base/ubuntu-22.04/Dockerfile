@@ -10,9 +10,11 @@ ENV TZ=Asia/Shanghai
 ENV DEBIAN_FRONTEND=noninteractive
 
 # 更新软件源并安装基础软件包
+# build-essential 提供 make/gcc/g++，用于 npm 原生模块（node-gyp）的源码编译，
+# 例如 serialport 这类没有 linux 预编译产物的包
 RUN sed -Ei "s@(security|ports|archive).ubuntu.com@mirrors.cloud.tencent.com@g" /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y curl wget unzip git openssh-client openssh-server vim jq sudo bash-completion lsof && \
+    apt-get install -y curl wget unzip git openssh-client openssh-server vim jq sudo bash-completion lsof build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # 安装 cloudflared（Cloudflare Tunnel 客户端）
