@@ -60,6 +60,22 @@ RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
     bash -c './opencode.sh' &&\
     rm -rf /tmp/my-linux
 
+# 安装 CNB 官方技能（cnb-skill 仓库 14 个 cnb-* 技能）
+# 前置依赖：cnb-cli 提供 `cnb` 命令（技能内部会调用它），skills CLI 提供 `npx skills`
+# 必须放在 node 安装之后：npm/npx 均来自上面的 nodejs.sh
+# nodejs.sh 已把 npm 全局前缀设为 ~/.npm-global，但它只写入 ~/.bashrc/~/.zshrc，
+# 非交互的 RUN 环境取不到，故这里显式补进 PATH
+ENV PATH="/root/.npm-global/bin:${PATH}"
+# 默认「全局规范目录 + 软链接」模式，实测落盘：
+#   ~/.agents/skills/<skill>      真实文件（OpenCode 等 universal agent 直接读取）
+#   ~/.claude/skills/<skill>      软链接 -> ../../.agents/skills/<skill>
+#   ~/.codebuddy/skills/<skill>   软链接 -> ../../.agents/skills/<skill>
+# 显式指定 --agent 而非依赖自动探测，避免构建期 agent 目录尚未生成导致漏链
+RUN npm install -g @cnbcool/cnb-cli skills@1.5.23 && \
+    npx skills add https://cnb.cool/cnb/skills/cnb-skill.git -g -y --agent codebuddy --agent claude-code --agent opencode && \
+    cnb --version && \
+    ls /root/.agents/skills
+
 # 安装 skills（软链接安装，推荐）, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
 # 软链接方式通过 ~/.smskills 中间镜像层解耦仓库路径，删除临时克隆目录后 agent 链接不会断
 # 先 update 做本地镜像，再用 link 按需链接指定工具
