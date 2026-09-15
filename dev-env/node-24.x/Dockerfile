@@ -1,8 +1,10 @@
 FROM debian:bookworm
 
 # 更新软件包
+# build-essential 提供 make/gcc/g++，用于 npm 原生模块（node-gyp）的源码编译，
+# 例如 @dimava/serialport-bindings-cpp 只有 win32 预编译产物，Linux 上必须现编
 RUN apt-get update && \
-    apt-get install -y curl wget unzip git openssh-client openssh-server vim zsh && \
+    apt-get install -y curl wget unzip git openssh-client openssh-server vim zsh build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # 安装 cloudflared（Cloudflare Tunnel 客户端）
