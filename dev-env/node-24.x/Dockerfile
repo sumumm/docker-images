@@ -53,13 +53,28 @@ COPY common/settings.json /root/.vscode-server/data/Machine/settings.json
 COPY common/settings.json /root/.local/share/code-server/Machine/settings.json
 COPY common/gitconfig /root/.gitconfig
 
-# 安装 node 和 claude code
+# 无头浏览器：供各 agent 做前端自动化测试
+# 浏览器本体（playwright + chromium + CJK 字体/xvfb）由 my-linux/Frontend/playwright.sh 安装：
+#   apt 包清单、烟测逻辑都收在脚本里，go/python 等其他镜像可直接复用同一脚本
+#   脚本默认装 latest（不锁 playwright 版本），需要复现某次构建时再显式传 PLAYWRIGHT_VERSION=x.y.z
+# 为什么这条 ENV 必须留在 Dockerfile 而不能只靠脚本 export：
+#   脚本内的 export 只对当次 RUN 生效，不会写进镜像；
+#   而默认的 ~/.cache/ms-playwright 会随运行用户变化，固定目录下非 root 跑 agent 也能复用
+# 注意: 不锁版本 + Docker 层缓存 = 这个 RUN 会被缓存跳过，latest 不会真的重新解析，
+#   即"每次构建都拉最新"并不成立；要真正做到，构建时必须禁用缓存
+#   （./build.sh -f，即 docker build --no-cache），代价是整个镜像从 apt 开始全量重跑
+# 实测踩坑记录（都体现在脚本里）：缺 CJK 字体时中文页面截图全是豆腐块但用例照样 pass；
+#   playwright uninstall --all 不会删除 chromium headless shell
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+
+# 安装 node、各类 agent CLI 和无头浏览器
 RUN git clone https://cnb.cool/sumu.k/my-linux /tmp/my-linux &&\
     cd /tmp/my-linux/Frontend &&\
     chmod +x *.sh &&\
     bash -c 'NODE_VERSION=24 ./nodejs.sh' &&\
     bash -c './claude.sh' &&\
     bash -c './opencode.sh' &&\
+    bash -c './playwright.sh' &&\
     rm -rf /tmp/my-linux
 
 # 安装 CNB 官方技能（cnb-skill 仓库 14 个 cnb-* 技能）
