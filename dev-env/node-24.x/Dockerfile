@@ -96,12 +96,29 @@ RUN npm install -g @cnbcool/cnb-cli skills@1.5.23 && \
 # 安装 skills（软链接安装，推荐）, 当 存在一个 ~/.codebuddy/skills/SKILL.md 的时候会导致codebuddy 无法正常读取用户 siklls
 # 软链接方式通过 ~/.smskills 中间镜像层解耦仓库路径，删除临时克隆目录后 agent 链接不会断
 # 先 update 做本地镜像，再用 link 按需链接指定工具
+# 安装完 skills 后接着安装 rules（全局规则，源为同仓库 rules/AGENTS.md：文件编码、画图技能选择等工程规则）
+# rules 为复制模式（非软链、无镜像层）：目标都是「文件」，软链易在工具重写源文件时断链，仓库规则变更后重跑 install 即可
+# rules 安装到与 ubuntu-22.04 基础镜像相同的 5 个工具，实测落盘：
+#   claude    ~/.claude/CLAUDE.md
+#   opencode  ~/.config/opencode/AGENTS.md
+#   codebuddy ~/.codebuddy/rules/agents-rules/RULE.mdc（用户规则；CODEBUDDY.md 只在项目根目录生效，故不写该文件）
+#   zcode     ~/.zcode/AGENTS.md
+#   dsh       ~/.dsh/AGENTS.md
+# 注：本镜像未安装 zcode / dsh CLI，规则文件先落盘占位，运行时自行装工具即生效（与基础镜像为二者装 skills 的做法一致）
+# 逐个显式指定工具而非 install 全部，与上面的 skills 口径一致；rules 带 force：
+# 构建期无 TTY，目标已存在且与仓库源不一致时会交互询问是否覆盖，force 跳过询问直接覆盖
 RUN git clone https://cnb.cool/smk.h/my-skills /tmp/my-skills &&\
-    chmod +x /tmp/my-skills/linux-skills.sh &&\
+    chmod +x /tmp/my-skills/linux-skills.sh /tmp/my-skills/linux-rules.sh &&\
     /tmp/my-skills/linux-skills.sh update &&\
     /tmp/my-skills/linux-skills.sh link claude &&\
     /tmp/my-skills/linux-skills.sh link opencode &&\
     /tmp/my-skills/linux-skills.sh link codebuddy &&\
+    /tmp/my-skills/linux-rules.sh install claude force &&\
+    /tmp/my-skills/linux-rules.sh install opencode force &&\
+    /tmp/my-skills/linux-rules.sh install codebuddy force &&\
+    /tmp/my-skills/linux-rules.sh install zcode force &&\
+    /tmp/my-skills/linux-rules.sh install dsh force &&\
+    ls /root/.claude/CLAUDE.md /root/.config/opencode/AGENTS.md /root/.codebuddy/rules/agents-rules/RULE.mdc /root/.zcode/AGENTS.md /root/.dsh/AGENTS.md &&\
     rm -rf /tmp/my-skills
 
 # 指定字符集支持命令行输入中文（根据需要选择字符集）
